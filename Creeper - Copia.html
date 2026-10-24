@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CREP MC - Servidor de Minecraft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07090f;
+      --bg-card: rgba(18, 22, 32, 0.85);
+      --bg-card-hover: rgba(26, 32, 44, 0.9);
+      --green-primary: #00ff88;
+      --green-glow: rgba(0, 255, 136, 0.3);
+      --purple-primary: #9d4edd;
+      --purple-glow: rgba(157, 78, 221, 0.3);
+      --text-main: #f0f4f8;
+      --text-muted: #8c9ba5;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --border-radius: 16px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    canvas#mc-sky {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(10, 12, 16, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 100;
+      padding: 1rem 0;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .logo-text {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 1.4rem;
+      background: linear-gradient(135deg, var(--green-primary), #00b8ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+    }
+
+    nav ul {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+      align-items: center;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    nav a:hover {
+      color: var(--green-primary);
+    }
+
+    .btn-commands-nav {
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid var(--green-primary);
+      color: var(--green-primary) !important;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+    }
+
+    .btn-commands-nav:hover {
+      background: var(--green-primary);
+      color: #000 !important;
+      box-shadow: 0 0 15px var(--green-glow);
+    }
+
+    .btn-discord {
+      background: #5865F2;
+      color: #fff !important;
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      font-weight: 700;
+      box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+    }
+
+    .btn-discord:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
+    }
+
+    .hero {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 2rem 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .badge-welcome {
+      display: inline-block;
+      padding: 0.4rem 1.2rem;
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      color: var(--green-primary);
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--green-primary), var(--purple-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 650px;
+      margin: 0 auto 3rem;
+    }
+
+    .ip-cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto 2rem;
+    }
+
+    .ip-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      position: relative;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .ip-card.java {
+      border-top: 4px solid var(--green-primary);
+    }
+
+    .ip-card.bedrock {
+      border-top: 4px solid var(--purple-primary);
+    }
+
+    .ip-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .ip-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .platform-title {
+      font-weight: 800;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .bedrock-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .bedrock-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+    }
+
+    .bedrock-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    .ip-display {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-family: monospace;
+      font-size: 1.1rem;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
+    .bedrock-value {
+      font-family: monospace;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      word-break: break-all;
+    }
+
+    .ip-copy-btn {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .ip-card.java .ip-copy-btn {
+      background: var(--green-primary);
+      color: #000;
+    }
+
+    .ip-card.bedrock .ip-copy-btn {
+      background: var(--purple-primary);
+      color: #fff;
+    }
+
+    .ip-copy-btn:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+
+    .bedrock-btns-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .btn-sub-copy {
+      padding: 0.6rem;
+      font-size: 0.85rem;
+    }
+
+    .starter-btn-container {
+      margin-top: 1.5rem;
+    }
+
+    .btn-starter {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      color: #fff;
+      text-decoration: none;
+      padding: 1rem 2rem;
+      border-radius: var(--border-radius);
+      font-weight: 800;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 20px rgba(255, 75, 43, 0.4);
+      transition: var(--transition);
+    }
+
+    .btn-starter:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(255, 75, 43, 0.6);
+    }
+
+    .content-section {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 4rem auto;
+      padding: 0 2rem;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 3rem;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card, .rule-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      transition: var(--transition);
+    }
+
+    .feature-card:hover, .rule-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card h3, .rule-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      max-width: 800px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 2.5rem;
+      position: relative;
+      transform: translateY(20px);
+      transition: var(--transition);
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .cmd-group {
+      margin-bottom: 2rem;
+    }
+
+    .cmd-group h4 {
+      color: var(--green-primary);
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .cmd-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .cmd-item {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .cmd-name {
+      font-family: monospace;
+      color: #00b8ff;
+      font-weight: 700;
+    }
+
+    .cmd-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 1;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--green-primary);
+      color: #000;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      font-weight: 800;
+      box-shadow: 0 10px 30px var(--green-glow);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: var(--transition);
+      z-index: 2000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.5rem; }
+      nav ul { display: none; }
+      .bedrock-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="mc-sky"></canvas>
+
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo">
+        <span class="logo-text">CREP MC</span>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="#sobre">Sobre</a></li>
+          <li><a href="#regras">Regras</a></li>
+          <li><a href="#" id="btnOpenModal" class="btn-commands-nav">📜 Comandos</a></li>
+          <li><a href="https://discord.gg/Ys5UUnaa2N" target="_blank" class="btn-discord">Discord</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="badge-welcome">BEM-VINDO AO CREP MC</div>
+      <h1>A Tua Nova Aventura <span>Minecraft</span></h1>
+      <p>Junta-te à nossa comunidade! Compatível com edições Java e Bedrock (Telemóvel/Console).</p>
+
+      <div class="ip-cards-container">
+        <!-- Java Card -->
+        <div class="ip-card java">
+          <div>
+            <div class="ip-header">
+              <span class="platform-title">☕ Java Edition</span>
+            </div>
+            <div class="ip-display" id="ipJava">crepmc.falix.gg</div>
+          </div>
+          <button class="ip-copy-btn" onclick="copyValue('crepmc.falix.gg', 'IP Java')">
+            Copiar IP Java
+          </button>
+        </div>
+
+        <!-- Bedrock Card -->
+        <div class="ip-card bedrock">
+          <div>
+            <div class="ip-header">
+              <span class="platform-title">📱 Bedrock / PE</span>
+            </div>
+            <div class="bedrock-grid">
+              <div class="bedrock-box">
+                <div class="bedrock-label">Endereço (IP)</div>
+                <div class="bedrock-value">142.249.167.14</div>
+              </div>
+              <div class="bedrock-box">
+                <div class="bedrock-label">Porta</div>
+                <div class="bedrock-value">10448</div>
+              </div>
+            </div>
+          </div>
+          <div class="bedrock-btns-container">
+            <button class="ip-copy-btn btn-sub-copy" onclick="copyValue('142.249.167.14', 'Endereço IP Bedrock')">
+              Copiar IP
+            </button>
+            <button class="ip-copy-btn btn-sub-copy" onclick="copyValue('10448', 'Porta Bedrock')">
+              Copiar Porta
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="starter-btn-container">
+        <a href="https://falixnodes.net/pt/iniciar-servidor" target="_blank" class="btn-starter">
+          ⚡ Ligar Servidor na Falix
+        </a>
+      </div>
+    </section>
+
+    <!-- Sobre Section -->
+    <section class="content-section" id="sobre">
+      <h2 class="section-title">O que temos no Servidor</h2>
+      <div class="cards-grid">
+        <div class="feature-card">
+          <div class="card-icon">🛡️</div>
+          <h3>Proteção de Terrenos</h3>
+          <p>Protege as tuas construções e baús contra invasões usando blocos de proteção simples de gerir.</p>
+        </div>
+        <div class="feature-card">
+          <div class="card-icon">💎</div>
+          <h3>Economia & Lojas</h3>
+          <p>Compra e vende itens na loja do servidor, negoceia com outros jogadores e domina o mercado.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Regras Section -->
+    <section class="content-section" id="regras">
+      <h2 class="section-title">Regras do Servidor</h2>
+      <div class="cards-grid">
+        <div class="rule-card">
+          <div class="card-icon">🤝</div>
+          <h3>1. Respeito Mútuo</h3>
+          <p>Respeita todos os jogadores no chat. Ofensas pesadas, preconceito e toxicidade não serão tolerados.</p>
+        </div>
+        <div class="rule-card">
+          <div class="card-icon">🚫</div>
+          <h3>2. Proibido Hacks / Cheats</h3>
+          <p>O uso de x-ray, auto-clickers ou clientes modificados resultará em banimento permanente.</p>
+        </div>
+        <div class="rule-card">
+          <div class="card-icon">⚖️</div>
+          <h3>3. Fair Play & Convivência</h3>
+          <p>Mantém um jogo limpo. O aproveitamento de bugs ou atitudes antidesportivas para prejudicar a comunidade levará a punição.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Comandos -->
+  <div class="modal-overlay" id="commandsModal">
+    <div class="modal-content">
+      <button class="modal-close" id="btnCloseModal">&times;</button>
+      <h2 style="margin-bottom: 1.5rem;">📜 Comandos para Jogadores</h2>
+
+      <div class="cmd-group">
+        <h4>🏡 Terrenos e Proteção</h4>
+        <div class="cmd-list">
+          <div class="cmd-item"><span class="cmd-name">/trust &lt;jogador&gt;</span><span class="cmd-desc">Dá permissão total de acesso ao teu terreno para um amigo.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/untrust &lt;jogador&gt;</span><span class="cmd-desc">Remove as permissões de um jogador no teu terreno.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/claimslist</span><span class="cmd-desc">Mostra a lista de todos os teus terrenos e blocos disponíveis.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/abandonclaim</span><span class="cmd-desc">Apaga o terreno onde estás em cima.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/trapped</span><span class="cmd-desc">Teleporta-te para fora de um terreno caso fiques preso.</span></div>
+        </div>
+      </div>
+
+      <div class="cmd-group">
+        <h4>🚀 Teleporte e Casas</h4>
+        <div class="cmd-list">
+          <div class="cmd-item"><span class="cmd-name">/tpa &lt;jogador&gt;</span><span class="cmd-desc">Envia um pedido para te teleportares até um jogador.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/tpaccept</span><span class="cmd-desc">Aceita um pedido de teleporte pendente.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/sethome &lt;nome&gt;</span><span class="cmd-desc">Guarda a tua localização atual como uma casa.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/home &lt;nome&gt;</span><span class="cmd-desc">Teleporta-te para uma das tuas casas salvas.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/homes</span><span class="cmd-desc">Abre o menu com todas as tuas casas.</span></div>
+        </div>
+      </div>
+
+      <div class="cmd-group">
+        <h4>🏰 Clãs</h4>
+        <div class="cmd-list">
+          <div class="cmd-item"><span class="cmd-name">/clan create &lt;nome&gt;</span><span class="cmd-desc">Cria o teu próprio clã.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/clan invite &lt;jogador&gt;</span><span class="cmd-desc">Convida um jogador para o teu clã.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/c &lt;mensagem&gt;</span><span class="cmd-desc">Envia uma mensagem no chat privado do teu clã.</span></div>
+        </div>
+      </div>
+
+      <div class="cmd-group">
+        <h4>🛒 Economia & Mercado</h4>
+        <div class="cmd-list">
+          <div class="cmd-item"><span class="cmd-name">/shop</span><span class="cmd-desc">Abre o menu da loja do servidor.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/sellall</span><span class="cmd-desc">Vende todos os itens elegíveis do teu inventário.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/nightmarket</span><span class="cmd-desc">Abre o Mercado Noturno com ofertas rotativas.</span></div>
+        </div>
+      </div>
+
+      <div class="cmd-group">
+        <h4>👕 Skin & Conta</h4>
+        <div class="cmd-list">
+          <div class="cmd-item"><span class="cmd-name">/skin &lt;nome&gt;</span><span class="cmd-desc">Altera a tua skin para a de um jogador Java original.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/register &lt;senha&gt; &lt;senha&gt;</span><span class="cmd-desc">Regista a tua conta na primeira vez que entras.</span></div>
+          <div class="cmd-item"><span class="cmd-name">/login &lt;senha&gt;</span><span class="cmd-desc">Faz login na tua conta ao entrar no servidor.</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 CREP MC - Todos os direitos reservados. Não associado à Mojang Studios.</p>
+  </footer>
+
+  <div class="toast" id="toast">Copiado com sucesso!</div>
+
+  <script>
+    // Minecraft Beautiful Sky Background Animation
+    const canvas = document.getElementById('mc-sky');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let clouds = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Star {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * (canvas.height * 0.6); // Only in the upper sky
+        this.size = Math.random() * 2 + 1;
+        this.alpha = Math.random();
+        this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+      }
+      update() {
+        this.alpha += this.twinkleSpeed;
+        if (this.alpha > 1 || this.alpha < 0.2) {
+          this.twinkleSpeed = -this.twinkleSpeed;
+        }
+      }
+      draw() {
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    class Cloud {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.width = Math.random() * 150 + 100;
+        this.height = Math.random() * 25 + 15;
+        this.x = -this.width - Math.random() * 200;
+        this.y = Math.random() * (canvas.height * 0.45);
+        this.speed = Math.random() * 0.15 + 0.05;
+        this.opacity = Math.random() * 0.35 + 0.15;
+      }
+      update() {
+        this.x += this.speed;
+        if (this.x > canvas.width) {
+          this.reset();
+          this.x = -this.width;
+        }
+      }
+      draw() {
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        // Pixelated blocky cloud style
+        const blockSize = 10;
+        for (let bx = 0; bx < this.width; bx += blockSize) {
+          for (let by = 0; by < this.height; by += blockSize) {
+            // Create irregular blocky shape
+            if (Math.sin(bx * 0.1) + Math.cos(by * 0.1) > -0.5) {
+              ctx.fillRect(this.x + bx, this.y + by, blockSize - 1, blockSize - 1);
+            }
+          }
+        }
+      }
+    }
+
+    function initSky() {
+      stars = [];
+      clouds = [];
+      for (let i = 0; i < 60; i++) {
+        stars.push(new Star());
+      }
+      for (let i = 0; i < 5; i++) {
+        const c = new Cloud();
+        c.x = Math.random() * canvas.width; // spread them out initially
+        clouds.push(c);
+      }
+    }
+
+    function animateSky() {
+      // Minecraft Sky Gradient (Dark blue top fading down to bright twilight/horizon blue)
+      let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#020617');    // Deep Night Sky
+      gradient.addColorStop(0.5, '#0f172a');  // Mid Sky
+      gradient.addColorStop(1, '#1e293b');    // Horizon Glow
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Stars
+      stars.forEach(star => {
+        star.update();
+        star.draw();
+      });
+
+      // Draw Clouds
+      clouds.forEach(cloud => {
+        cloud.update();
+        cloud.draw();
+      });
+
+      requestAnimationFrame(animateSky);
+    }
+
+    initSky();
+    animateSky();
+
+    // Copiar Valores
+    function copyValue(text, label) {
+      navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        toast.innerText = `${label} copiado!`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+      });
+    }
+
+    // Controle do Modal
+    const modal = document.getElementById('commandsModal');
+    const btnOpen = document.getElementById('btnOpenModal');
+    const btnClose = document.getElementById('btnCloseModal');
+
+    btnOpen.addEventListener('click', (e) => {
+      e.preventDefault();
+      modal.classList.add('active');
+    });
+
+    btnClose.addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+  </script>
+</body>
+</html>
